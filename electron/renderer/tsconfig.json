@@ -1,0 +1,15 @@
+{
+  // Desktop window (browser side). Type-check only; bundled by scripts/build.mjs.
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": [],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "isolatedModules": true
+  },
+  "include": ["./**/*.ts", "../../shared/**/*.ts"]
+}

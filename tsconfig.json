@@ -1,0 +1,19 @@
+{
+  // Node side: Electron main + preload, the Express server, shared code and tests.
+  // Type-check only; scripts/build.mjs bundles with esbuild.
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2023"],
+    "types": ["node"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "verbatimModuleSyntax": false,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["electron/*.ts", "server/**/*.ts", "shared/**/*.ts", "tests/**/*.ts", "*.config.ts", "*.config.mts"]
+}

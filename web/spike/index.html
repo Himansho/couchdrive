@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Couchdrive test</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Couchdrive</h1>
+      <p class="sub">Phone test · milestone 1</p>
+    </header>
+
+    <main>
+      <p id="status" class="status">Connecting to your laptop…</p>
+
+      <div id="content" hidden>
+        <section class="card">
+          <h2>1. Play and seek</h2>
+          <video id="video" controls playsinline preload="metadata"></video>
+          <p id="video-meta" class="meta"></p>
+          <div class="jumps">
+            <button type="button" data-jump="0.1">Jump to 10%</button>
+            <button type="button" data-jump="0.5">50%</button>
+            <button type="button" data-jump="0.9">90%</button>
+          </div>
+          <dl class="timings">
+            <dt>Start after tapping play</dt>
+            <dd id="t-start">–</dd>
+            <dt>Last seek</dt>
+            <dd id="t-seek">–</dd>
+          </dl>
+          <p class="hint">Targets: playback starts within 2 s, and each seek within 1 s. Try dragging the seek bar too.</p>
+        </section>
+
+        <section class="card">
+          <h2>2. Downloads</h2>
+          <p class="hint">
+            Tap each one and note what Chrome does: saves it straight away, asks first, warns, or blocks it.
+            Then check the name of the saved file in Chrome's Downloads list.
+          </p>
+          <ul id="downloads" class="downloads"></ul>
+        </section>
+
+        <section class="card">
+          <h2>3. This phone</h2>
+          <dl id="about" class="about"></dl>
+        </section>
+      </div>
+    </main>
+
+    <script src="/test-page.js"></script>
+  </body>
+</html>

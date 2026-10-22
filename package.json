@@ -1,0 +1,32 @@
+{
+  "name": "couchdrive",
+  "version": "0.1.0",
+  "description": "Your laptop's files, on your phone. Browse and stream over WiFi; nothing to install on the phone.",
+  "license": "MIT",
+  "author": "Himanshu Bartwal",
+  "private": true,
+  "main": "dist/electron/main.js",
+  "scripts": {
+    "start": "node scripts/build.mjs && electron .",
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc -p tsconfig.json && tsc -p electron/renderer && tsc -p web",
+    "test": "vitest run",
+    "test:e2e": "node scripts/build.mjs && playwright test",
+    "check": "npm run typecheck && npm test && npm run test:e2e"
+  },
+  "dependencies": {
+    "express": "^5.3.0",
+    "fflate": "^0.8.3",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.5",
+    "@types/qrcode": "^1.5.6",
+    "electron": "^45.0.0",
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}

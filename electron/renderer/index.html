@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; img-src data:"
+    />
+    <meta name="color-scheme" content="light dark" />
+    <title>Couchdrive</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Couchdrive</h1>
+      <span class="badge">Milestone 1 test</span>
+    </header>
+
+    <main>
+      <section id="sharing" class="card" hidden>
+        <p class="status"><span class="dot"></span><span id="network"></span></p>
+        <img id="qr" alt="QR code with the link for your phone" />
+        <p class="hint">
+          Scan with your Android phone's camera and open the link in Chrome. The phone must be on the
+          same WiFi as this laptop, or this laptop must be on the phone's hotspot.
+        </p>
+        <div class="url-row">
+          <code id="url"></code>
+          <button id="copy" type="button">Copy</button>
+        </div>
+        <p class="meta" id="port"></p>
+      </section>
+
+      <section id="message" class="card" hidden>
+        <h2 id="message-title"></h2>
+        <p id="message-text"></p>
+      </section>
+
+      <section class="card">
+        <button id="restart" type="button">Restart sharing</button>
+        <p class="hint">
+          Switched WiFi, or moved to the phone's hotspot? Restart to get the new address and a new QR code.
+          Each restart makes a new token, so old links stop working.
+        </p>
+        <p class="meta" id="others" hidden></p>
+      </section>
+
+      <section class="card">
+        <h2>Test video</h2>
+        <p id="video-name" class="file"></p>
+        <button id="choose-video" type="button">Choose video…</button>
+        <p class="hint">
+          Pick a large MP4 (about 1 GB) to test streaming and seeking, then reload the test page on the phone.
+        </p>
+      </section>
+    </main>
+
+    <script src="renderer.js"></script>
+  </body>
+</html>
