@@ -125,7 +125,7 @@ function requestLogger(log: (line: string) => void) {
       const url = req.originalUrl.replace(tokenInUrl, '$1…');
       const range = req.headers.range ? ` [${req.headers.range}]` : '';
       const outcome = res.writableFinished ? String(res.statusCode) : `${res.statusCode}, cancelled by phone`;
-      log(`${req.ip} ${req.method} ${url}${range} → ${outcome} (${Date.now() - started} ms)`);
+      log(`${req.protocol} ${req.ip} ${req.method} ${url}${range} → ${outcome} (${Date.now() - started} ms)`);
     });
     next();
   };

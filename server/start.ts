@@ -1,4 +1,5 @@
 import http, { type RequestListener } from 'node:http';
+import https from 'node:https';
 import type { AddressInfo } from 'node:net';
 
 export interface RunningServer {
@@ -11,14 +12,16 @@ export interface RunningServer {
 /**
  * Listens on `host`, starting at `firstPort` and moving to the next port when
  * one is busy, up to `attempts` ports in total (PRD D7). Port 0 picks any free port.
+ * With `tls`, it serves HTTPS.
  */
 export async function startServer(
   handler: RequestListener,
   host: string,
   firstPort: number,
   attempts: number,
+  tls?: { key: string; cert: string },
 ): Promise<RunningServer> {
-  const server = http.createServer(handler);
+  const server: http.Server = tls ? https.createServer(tls, handler) : http.createServer(handler);
   for (let i = 0; ; i++) {
     try {
       await listen(server, host, firstPort === 0 ? 0 : firstPort + i);

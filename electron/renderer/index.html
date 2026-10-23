@@ -19,11 +19,16 @@
     <main>
       <section id="sharing" class="card" hidden>
         <p class="status"><span class="dot"></span><span id="network"></span></p>
+        <div class="switch" role="tablist" aria-label="Link type">
+          <button type="button" role="tab" data-link="https">Padlock link (HTTPS)</button>
+          <button type="button" role="tab" data-link="http">Simple link (HTTP)</button>
+        </div>
         <img id="qr" alt="QR code with the link for your phone" />
         <p class="hint">
           Scan with your Android phone's camera and open the link in Chrome. The phone must be on the
           same WiFi as this laptop, or this laptop must be on the phone's hotspot.
         </p>
+        <p class="note" id="link-hint"></p>
         <div class="url-row">
           <code id="url"></code>
           <button id="copy" type="button">Copy</button>

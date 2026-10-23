@@ -1,7 +1,7 @@
 // Milestone 1 phone test page. Milestone 3 replaces it with the real phone app.
 import { TOKEN_PARAM } from '../../shared/constants';
 import { formatBytes } from '../../shared/format';
-import type { SpikeInfo } from '../../shared/types';
+import type { SpikeDownload, SpikeInfo } from '../../shared/types';
 
 const token = new URLSearchParams(location.search).get(TOKEN_PARAM) ?? '';
 const withToken = (path: string) => `${path}${path.includes('?') ? '&' : '?'}${TOKEN_PARAM}=${encodeURIComponent(token)}`;
@@ -67,18 +67,101 @@ function setUpVideo(info: SpikeInfo): void {
   }
 }
 
+/** Sharing loads the whole file into the phone's memory first, so very big files are left out. */
+const MAX_SHARE_BYTES = 200 * 1024 * 1024;
+/** Chrome offers file sharing only on pages it treats as secure: the padlock link, not the simple one. */
+const canShareFiles = typeof navigator.canShare === 'function';
+
 function renderDownloads(info: SpikeInfo): void {
+  if (!canShareFiles) {
+    const notice = $('share-notice');
+    notice.hidden = false;
+    notice.textContent =
+      location.protocol === 'https:'
+        ? "Chrome doesn't offer sharing on this page, even on the padlock link."
+        : 'Share buttons need the padlock link. On the laptop, pick "Padlock link (HTTPS)" and scan the new QR code.';
+  }
+
   const list = $('downloads');
   for (const file of info.downloads) {
+    const details = document.createElement('div');
+    details.className = 'details';
+    details.append(span('label', file.label), span('name', `${file.name} · ${formatBytes(file.size)}`));
+    if (file.note) details.append(span('note', file.note));
+
+    const download = element('a', 'Download');
+    download.className = 'button';
+    download.href = withToken(`/spike/download/${file.id}`);
+    const actions = document.createElement('div');
+    actions.className = 'actions';
+    actions.append(download);
+
+    const status = span('share-status', '');
+    if (canShareFiles) {
+      const share = element('button', 'Share');
+      share.type = 'button';
+      share.className = 'button';
+      if (file.size > MAX_SHARE_BYTES) {
+        share.disabled = true;
+        status.textContent = 'Too big to share from the browser. Download it, then share from the notification.';
+      } else {
+        share.addEventListener('click', () => void shareFile(file, share, status));
+      }
+      actions.append(share);
+    }
+
     const item = document.createElement('li');
-    const link = document.createElement('a');
-    link.href = withToken(`/spike/download/${file.id}`);
-    link.className = 'download';
-    link.append(span('label', file.label), span('name', `${file.name} · ${formatBytes(file.size)}`));
-    if (file.note) link.append(span('note', file.note));
-    item.append(link);
+    item.className = 'file';
+    item.append(details, actions, status);
     list.append(item);
   }
+}
+
+/** Files loaded on a first tap whose share sheet Chrome refused because loading took too long. */
+const prepared = new Map<string, File>();
+
+async function shareFile(file: SpikeDownload, button: HTMLButtonElement, status: HTMLElement): Promise<void> {
+  const reset = () => {
+    button.disabled = false;
+    button.textContent = 'Share';
+  };
+  let shareable = prepared.get(file.id);
+  if (!shareable) {
+    button.disabled = true;
+    button.textContent = 'Loading…';
+    status.textContent = '';
+    try {
+      const response = await fetch(withToken(`/spike/download/${file.id}`));
+      if (!response.ok) throw new Error(`the laptop answered ${response.status}`);
+      const blob = await response.blob();
+      shareable = new File([blob], file.name, { type: blob.type });
+    } catch (err) {
+      status.textContent = `Couldn't load the file: ${(err as Error).message}`;
+      return reset();
+    }
+  }
+
+  if (!navigator.canShare({ files: [shareable] })) {
+    status.textContent = `Chrome can't share .${file.name.split('.').pop()} files.`;
+    return reset();
+  }
+  try {
+    await navigator.share({ files: [shareable] });
+    prepared.delete(file.id);
+    status.textContent = 'Shared.';
+  } catch (err) {
+    const name = (err as Error).name;
+    if (name === 'NotAllowedError') {
+      // Chrome only opens the share sheet right after a tap; a slow load used that up.
+      prepared.set(file.id, shareable);
+      button.disabled = false;
+      button.textContent = 'Tap again to share';
+      return;
+    }
+    prepared.delete(file.id);
+    status.textContent = name === 'AbortError' ? 'Share cancelled.' : `Share failed (${name}).`;
+  }
+  reset();
 }
 
 function renderAbout(): void {
@@ -95,8 +178,9 @@ function renderAbout(): void {
   const rows: [string, string][] = [
     ['Browser', browser],
     ['Address', location.host],
-    ['Chrome treats the page as secure', window.isSecureContext ? 'yes' : 'no (plain HTTP)'],
-    ['Share menu (navigator.share)', 'share' in navigator ? 'available' : 'not available'],
+    ['Link', location.protocol === 'https:' ? 'Padlock (HTTPS)' : 'Simple (HTTP)'],
+    ['Chrome treats the page as secure', window.isSecureContext ? 'yes' : 'no'],
+    ['Share files', canShareFiles ? 'available' : 'not available'],
   ];
   $('about').append(...rows.flatMap(([term, value]) => [element('dt', term), element('dd', value)]));
 }

@@ -91,6 +91,37 @@ main {
   box-shadow: 0 0 0 3px color-mix(in srgb, #3aa36b 25%, transparent);
 }
 
+.switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.switch button {
+  color: var(--muted);
+  background: transparent;
+  padding: 7px 8px;
+  font-size: 13px;
+}
+
+.switch button[aria-selected='true'] {
+  color: var(--accent-text);
+  background: var(--accent);
+}
+
+.note {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--bg);
+  font-size: 12.5px;
+}
+
 #qr {
   display: block;
   width: 232px;

@@ -171,31 +171,68 @@ dd {
   gap: 8px;
 }
 
-.download {
+.file {
   display: grid;
-  gap: 2px;
-  min-height: 56px;
-  padding: 10px 14px;
+  gap: 10px;
+  padding: 12px 14px;
   border: 1px solid var(--line);
   border-radius: 10px;
-  color: inherit;
-  text-decoration: none;
 }
 
-.download:active {
-  background: var(--accent-soft);
+.details {
+  display: grid;
+  gap: 2px;
 }
 
-.download .label {
+.details .label {
   font-weight: 600;
   color: var(--accent);
 }
 
-.download .name {
+.details .name {
   overflow-wrap: anywhere;
 }
 
-.download .note {
+.details .note,
+.share-status {
   color: var(--muted);
   font-size: 13px;
+}
+
+.share-status:empty {
+  display: none;
+}
+
+.actions {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 8px;
+}
+
+.button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  text-decoration: none;
+}
+
+a.button {
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: 10px;
+}
+
+button:disabled {
+  opacity: 0.55;
+}
+
+.notice {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg);
+  font-size: 14px;
 }

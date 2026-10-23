@@ -4,21 +4,26 @@ import path from 'node:path';
 import { app, BrowserWindow, clipboard, dialog, ipcMain } from 'electron';
 import QRCode from 'qrcode';
 import { createApp } from '../server/app';
+import { loadOrCreateCertificate } from '../server/certificate';
 import { createSpikeFiles, type SpikeFile } from '../server/spike-files';
 import { startServer, type RunningServer } from '../server/start';
-import { DEFAULT_PORT, PORT_ATTEMPTS, TOKEN_PARAM } from '../shared/constants';
-import type { ShareState } from '../shared/types';
+import { DEFAULT_HTTPS_PORT, DEFAULT_PORT, PORT_ATTEMPTS, TOKEN_PARAM } from '../shared/constants';
+import type { LinkKind, ShareLink, ShareState } from '../shared/types';
 import { pickLanAddress } from './network';
+
+// Tests use a temporary folder, so they never change the real settings or certificate.
+if (process.env.COUCHDRIVE_USER_DATA) app.setPath('userData', process.env.COUCHDRIVE_USER_DATA);
 
 const rootDir = app.getAppPath();
 const publicDir = path.join(rootDir, 'server', 'public');
 const sampleVideoPath = path.join(rootDir, 'tests', 'fixtures', 'sample.mp4');
+const settingsPath = () => path.join(app.getPath('userData'), 'settings.json');
 
 let window: BrowserWindow | null = null;
-let server: RunningServer | null = null;
+let servers: RunningServer[] = [];
 let spikeFiles: SpikeFile[] = [];
 let video = { path: sampleVideoPath, version: 1 };
-let state: ShareState = { status: 'starting', defaultPort: DEFAULT_PORT, otherAddresses: [], video: describeVideo() };
+let state: ShareState = { status: 'starting', links: [], selected: 'https', otherAddresses: [], video: describeVideo() };
 let queue = Promise.resolve();
 
 function describeVideo(): ShareState['video'] {
@@ -30,12 +35,27 @@ function setState(next: ShareState): void {
   window?.webContents.send('state', state);
 }
 
+/** The only setting so far: which link's QR code to show. Padlock (HTTPS) unless the user picked the simple one. */
+function loadSelectedLink(): LinkKind {
+  try {
+    return JSON.parse(fs.readFileSync(settingsPath(), 'utf8')).link === 'http' ? 'http' : 'https';
+  } catch {
+    return 'https';
+  }
+}
+
+function saveSelectedLink(link: LinkKind): void {
+  fs.mkdirSync(path.dirname(settingsPath()), { recursive: true });
+  fs.writeFileSync(settingsPath(), JSON.stringify({ link }, null, 2));
+}
+
 async function startSharing(): Promise<void> {
   const { best, all } = pickLanAddress();
   // COUCHDRIVE_HOST overrides the pick: the e2e test uses 127.0.0.1, and it's a way out if the wrong adapter wins.
   const host = process.env.COUCHDRIVE_HOST || best?.address;
   const base = {
-    defaultPort: DEFAULT_PORT,
+    links: [],
+    selected: state.selected,
     otherAddresses: all.filter((a) => a.address !== host),
     video: describeVideo(),
   };
@@ -51,30 +71,39 @@ async function startSharing(): Promise<void> {
     log: (line) => console.log(line),
   });
   try {
-    server = await startServer(handler, host, DEFAULT_PORT, PORT_ATTEMPTS);
+    const certificate = await loadOrCreateCertificate(path.join(app.getPath('userData'), 'https'), host);
+    servers.push(await startServer(handler, host, DEFAULT_PORT, PORT_ATTEMPTS));
+    servers.push(await startServer(handler, host, DEFAULT_HTTPS_PORT, PORT_ATTEMPTS, certificate));
   } catch (err) {
+    await stopSharing();
     return setState({ ...base, status: 'error', host, error: (err as Error).message });
   }
 
-  const url = `http://${host}:${server.port}/?${TOKEN_PARAM}=${token}`;
-  console.log(`Sharing on ${url}`);
+  const [httpServer, httpsServer] = servers;
+  const links = await Promise.all([
+    makeLink('https', host, httpsServer.port, DEFAULT_HTTPS_PORT, token),
+    makeLink('http', host, httpServer.port, DEFAULT_PORT, token),
+  ]);
+  for (const link of links) console.log(`Sharing on ${link.url}`);
   setState({
     ...base,
     status: 'running',
-    url,
-    qrDataUrl: await QRCode.toDataURL(url, { margin: 1, width: 360 }),
+    links,
     host,
-    port: server.port,
     interfaceName: all.find((a) => a.address === host)?.interfaceName ?? 'COUCHDRIVE_HOST',
   });
 }
 
-async function stopSharing(): Promise<void> {
-  await server?.close();
-  server = null;
+async function makeLink(kind: LinkKind, host: string, port: number, defaultPort: number, token: string): Promise<ShareLink> {
+  const url = `${kind}://${host}:${port}/?${TOKEN_PARAM}=${token}`;
+  return { kind, url, port, defaultPort, qrDataUrl: await QRCode.toDataURL(url, { margin: 1, width: 360 }) };
 }
 
-/** Re-detects the network and makes a new token and QR code. Clicks queue up rather than overlap. */
+async function stopSharing(): Promise<void> {
+  await Promise.all(servers.splice(0).map((server) => server.close()));
+}
+
+/** Re-detects the network and makes a new token and QR codes. Clicks queue up rather than overlap. */
 function restartSharing(): Promise<void> {
   queue = queue.then(async () => {
     await stopSharing();
@@ -87,8 +116,14 @@ function restartSharing(): Promise<void> {
 function registerIpc(): void {
   ipcMain.handle('state:get', () => state);
   ipcMain.handle('sharing:restart', () => restartSharing());
+  ipcMain.handle('link:select', (_event, kind: LinkKind) => {
+    if (kind !== 'https' && kind !== 'http') return;
+    saveSelectedLink(kind);
+    setState({ ...state, selected: kind });
+  });
   ipcMain.handle('url:copy', () => {
-    if (state.url) clipboard.writeText(state.url);
+    const link = state.links.find((l) => l.kind === state.selected);
+    if (link) clipboard.writeText(link.url);
   });
   ipcMain.handle('video:choose', async () => {
     const result = await dialog.showOpenDialog(window!, {
@@ -137,6 +172,7 @@ if (!app.requestSingleInstanceLock()) {
 
   void app.whenReady().then(async () => {
     spikeFiles = await createSpikeFiles(path.join(app.getPath('temp'), 'couchdrive-spike'), sampleVideoPath);
+    state = { ...state, selected: loadSelectedLink() };
     registerIpc();
     createWindow();
     await restartSharing();

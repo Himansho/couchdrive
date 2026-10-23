@@ -7,6 +7,7 @@ const api: CouchdriveApi = {
     ipcRenderer.on('state', (_event, state: ShareState) => callback(state));
   },
   restartSharing: () => ipcRenderer.invoke('sharing:restart'),
+  selectLink: (kind) => ipcRenderer.invoke('link:select', kind),
   chooseVideo: () => ipcRenderer.invoke('video:choose'),
   copyUrl: () => ipcRenderer.invoke('url:copy'),
 };

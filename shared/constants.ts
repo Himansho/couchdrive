@@ -1,7 +1,8 @@
 export const APP_NAME = 'Couchdrive';
 
-/** Same port every launch, so a paired phone's bookmark keeps working (PRD D7). */
+/** Same ports every launch, so a paired phone's bookmark keeps working (PRD D7). */
 export const DEFAULT_PORT = 8642;
+export const DEFAULT_HTTPS_PORT = 8643;
 
 /** If the default port is busy, try this many ports after it before giving up. */
 export const PORT_ATTEMPTS = 20;

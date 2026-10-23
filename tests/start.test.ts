@@ -1,6 +1,8 @@
 import http from 'node:http';
+import https from 'node:https';
 import type { AddressInfo } from 'node:net';
 import { afterEach, describe, expect, it } from 'vitest';
+import { createCertificate } from '../server/certificate';
 import { startServer, type RunningServer } from '../server/start';
 
 const host = '127.0.0.1';
@@ -43,6 +45,22 @@ describe('startServer', () => {
   it('gives up after the allowed number of ports', async () => {
     const busy = await occupy();
     await expect(startServer(ok, host, busy, 1)).rejects.toMatchObject({ code: 'EADDRINUSE' });
+  });
+
+  it('serves HTTPS with a certificate the client can verify', async () => {
+    const { key, cert } = await createCertificate([host]);
+    const server = await startServer(ok, host, 0, 1, { key, cert });
+    cleanup.push(() => server.close());
+    const body = await new Promise<string>((resolve, reject) => {
+      https
+        .get(`https://${host}:${server.port}/`, { ca: cert }, (res) => {
+          let text = '';
+          res.on('data', (chunk) => (text += chunk));
+          res.on('end', () => resolve(text));
+        })
+        .on('error', reject);
+    });
+    expect(body).toBe('ok');
   });
 
   it('drops open connections on close', async () => {

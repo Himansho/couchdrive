@@ -430,11 +430,16 @@ The biggest risks are network setup on real Windows laptops and a path-check bug
 - Fixed port and PIN, or a new token every session: the phone pairs once and keeps a pairing cookie; the port stays fixed; the QR token still changes every session; the PIN is dropped.
 - Final name: Couchdrive.
 
+**Changes after the milestone 1 build (Oct 23, 2026)**
+
+- Padlock mode moved into the milestone 1 spike, at the builder's request. The window offers a padlock link (HTTPS, self-signed certificate) next to the plain HTTP link, and the test page has Share buttons on the padlock link. The certificate is saved and reused, and gets a new one only when the laptop's address isn't on it yet, so Chrome warns once per phone and network. Which link v1 shows by default is decided from the phone results.
+- A basic per-user NSIS installer (desktop and Start menu shortcuts) moved forward, so the app opens without a terminal. It is unsigned and adds no firewall rule. Milestone 5 still owns signing, the firewall rule, auto-update and the Store package.
+
 **Open questions**
 
 - [ ] What does Chrome on Android do with plain-HTTP downloads from a local IP, by file type? Answered in milestone 1.
 - [ ] Can electron-builder's MSIX build declare the firewall rule inside the package? Answered in milestone 5.
-- [ ] With padlock mode (self-signed HTTPS), does Android Chrome open the share menu after the user taps through the warning? A v1.1 spike.
+- [ ] With padlock mode (self-signed HTTPS), does Android Chrome open the share menu after the user taps through the warning? Moved into milestone 1; answered by the phone test.
 
 **Roadmap after v1**
 
